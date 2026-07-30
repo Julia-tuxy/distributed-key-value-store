@@ -59,3 +59,7 @@ target_link_libraries(kv_server PRIVATE kv_store kv_proto)
 # --- gRPC client: interactive REPL that talks to kv_server over the network ---
 add_executable(kv_client src/kv_client.cpp)
 target_link_libraries(kv_client PRIVATE kv_proto)
+
+# --- Concurrency stress test: many threads hitting kv_server over gRPC at once ---
+add_executable(kv_stress_test src/kv_stress_test.cpp)
+target_link_libraries(kv_stress_test PRIVATE kv_proto)
