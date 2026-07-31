@@ -63,3 +63,7 @@ target_link_libraries(kv_client PRIVATE kv_proto)
 # --- Concurrency stress test: many threads hitting kv_server over gRPC at once ---
 add_executable(kv_stress_test src/kv_stress_test.cpp)
 target_link_libraries(kv_stress_test PRIVATE kv_proto)
+
+# --- Coordinator: routes requests across multiple kv_server nodes ---
+add_executable(kv_coordinator src/kv_coordinator.cpp)
+target_link_libraries(kv_coordinator PRIVATE kv_proto)
