@@ -64,6 +64,14 @@ target_link_libraries(kv_client PRIVATE kv_proto)
 add_executable(kv_stress_test src/kv_stress_test.cpp)
 target_link_libraries(kv_stress_test PRIVATE kv_proto)
 
+# --- Consistent hashing ring, used by the coordinator to place keys on nodes ---
+add_library(kv_hash src/consistent_hash.cpp)
+target_include_directories(kv_hash PUBLIC include)
+
 # --- Coordinator: routes requests across multiple kv_server nodes ---
 add_executable(kv_coordinator src/kv_coordinator.cpp)
-target_link_libraries(kv_coordinator PRIVATE kv_proto)
+target_link_libraries(kv_coordinator PRIVATE kv_proto kv_hash)
+
+# --- Standalone demo: modulo hashing vs consistent hashing key movement ---
+add_executable(consistent_hash_demo src/consistent_hash_demo.cpp)
+target_link_libraries(consistent_hash_demo PRIVATE kv_hash)
