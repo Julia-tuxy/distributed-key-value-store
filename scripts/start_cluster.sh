@@ -9,6 +9,7 @@ PID_FILE="/tmp/kv_cluster_pids"
 
 NODE_PORTS=(50051 50052 50053)
 COORD_PORT=60000
+REPLICATION_FACTOR=2
 
 : > "$PID_FILE"
 
@@ -25,7 +26,7 @@ for port in "${NODE_PORTS[@]}"; do
   node_args+=("localhost:$port")
 done
 
-"$BUILD_DIR/kv_coordinator" "0.0.0.0:$COORD_PORT" "${node_args[@]}" > "/tmp/kv_coordinator.log" 2>&1 &
+"$BUILD_DIR/kv_coordinator" "0.0.0.0:$COORD_PORT" "$REPLICATION_FACTOR" "${node_args[@]}" > "/tmp/kv_coordinator.log" 2>&1 &
 echo $! >> "$PID_FILE"
 echo "started kv_coordinator on port $COORD_PORT (pid $!)"
 

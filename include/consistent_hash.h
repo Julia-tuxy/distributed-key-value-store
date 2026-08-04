@@ -32,6 +32,13 @@ class ConsistentHashRing {
   // Precondition: at least one node has been added.
   std::string GetNode(const std::string& key) const;
 
+  // Returns up to `count` distinct physical node addresses for `key`, in
+  // ring order starting from the key's position (so element 0 is exactly
+  // what GetNode would return). Used to build a key's replica set: the
+  // first address is the primary, the rest are replicas. Returns fewer
+  // than `count` addresses if there aren't that many distinct nodes.
+  std::vector<std::string> GetNodes(const std::string& key, int count) const;
+
   size_t NodeCount() const { return nodes_.size(); }
 
  private:

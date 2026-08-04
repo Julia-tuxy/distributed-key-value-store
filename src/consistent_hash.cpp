@@ -56,4 +56,33 @@ std::string ConsistentHashRing::GetNode(const std::string& key) const {
   return it->second;
 }
 
+std::vector<std::string> ConsistentHashRing::GetNodes(const std::string& key, int count) const {
+  std::vector<std::string> result;
+  if (ring_.empty() || count <= 0) {
+    return result;
+  }
+  count = std::min(count, static_cast<int>(nodes_.size()));
+
+  uint64_t position = Hash(key);
+  auto it = ring_.lower_bound(position);
+  if (it == ring_.end()) {
+    it = ring_.begin();
+  }
+
+  // Walk clockwise from the key's position, collecting each *distinct*
+  // physical node the first time one of its virtual points is seen.
+  // Bounded by ring_.size() so this always terminates even if `count`
+  // exceeds the number of physical nodes.
+  for (size_t seen = 0; seen < ring_.size() && static_cast<int>(result.size()) < count; ++seen) {
+    if (std::find(result.begin(), result.end(), it->second) == result.end()) {
+      result.push_back(it->second);
+    }
+    ++it;
+    if (it == ring_.end()) {
+      it = ring_.begin();
+    }
+  }
+  return result;
+}
+
 }  // namespace kv
