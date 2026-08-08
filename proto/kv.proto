@@ -7,6 +7,11 @@ service KeyValueStore {
   rpc Get(GetRequest) returns (GetResponse);
   rpc Put(PutRequest) returns (PutResponse);
   rpc Delete(DeleteRequest) returns (DeleteResponse);
+
+  // Liveness probe used by the coordinator's health checker. Doesn't touch
+  // the store -- a successful response just means this node's gRPC server
+  // is up and responsive.
+  rpc Ping(PingRequest) returns (PingResponse);
 }
 
 message GetRequest {
@@ -33,4 +38,10 @@ message DeleteRequest {
 
 message DeleteResponse {
   bool existed = 1;
+}
+
+message PingRequest {}
+
+message PingResponse {
+  bool ok = 1;
 }

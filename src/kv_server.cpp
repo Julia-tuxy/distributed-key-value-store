@@ -40,6 +40,12 @@ class KeyValueStoreServiceImpl final : public kv::KeyValueStore::Service {
     return grpc::Status::OK;
   }
 
+  grpc::Status Ping(grpc::ServerContext* /*context*/, const kv::PingRequest* /*request*/,
+                     kv::PingResponse* response) override {
+    response->set_ok(true);
+    return grpc::Status::OK;
+  }
+
  private:
   kv::KVStore store_;
 };
