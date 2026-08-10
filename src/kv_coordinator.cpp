@@ -196,6 +196,13 @@ class CoordinatorServiceImpl final : public kv::KeyValueStore::Service {
 };
 
 int main(int argc, char** argv) {
+  // Flush std::cout after every '<<', not just on newline. Without this,
+  // stdout is fully (not line-) buffered whenever it isn't a terminal --
+  // which is exactly the case when Docker captures a container's stdout
+  // for `docker logs` -- so the route:/health: lines below would sit in
+  // a buffer instead of showing up in real time.
+  std::cout.setf(std::ios::unitbuf);
+
   // argv: kv_coordinator <listen_address> <replication_factor> <node1_addr> <node2_addr> ...
   if (argc < 4) {
     std::cerr << "usage: " << argv[0]

@@ -1,0 +1,35 @@
+services:
+  # Three storage nodes -- each is just `kv_server`, unaware of the others.
+  # Sharding/replication happen entirely in the coordinator, not here.
+  node1:
+    build: .
+    command: ["kv_server", "0.0.0.0:50051"]
+    expose: ["50051"]
+
+  node2:
+    build: .
+    command: ["kv_server", "0.0.0.0:50051"]
+    expose: ["50051"]
+
+  node3:
+    build: .
+    command: ["kv_server", "0.0.0.0:50051"]
+    expose: ["50051"]
+
+  # Routes requests across node1-3: consistent hashing for placement,
+  # replication factor 2, health checks + failover. Docker Compose's
+  # internal DNS resolves "node1"/"node2"/"node3" to each container's
+  # address, so no hardcoded IPs are needed.
+  coordinator:
+    build: .
+    command:
+      [
+        "kv_coordinator",
+        "0.0.0.0:60000",
+        "2",
+        "node1:50051",
+        "node2:50051",
+        "node3:50051",
+      ]
+    ports: ["60000:60000"]
+    depends_on: [node1, node2, node3]

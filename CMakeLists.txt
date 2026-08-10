@@ -16,8 +16,18 @@ if(TSAN_BUILD)
 endif()
 
 find_package(Threads REQUIRED)
-find_package(Protobuf CONFIG REQUIRED)
-find_package(gRPC CONFIG REQUIRED)
+
+# Located via pkg-config rather than CMake's Config-mode find_package.
+# Homebrew's grpc/protobuf ship both, but Debian/Ubuntu's apt packages
+# (used in Dockerfile) only ship .pc files, not *Config.cmake -- pkg-config
+# is the one discovery mechanism both platforms support, so building this
+# way works identically on a Mac and inside the Docker image.
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(PROTOBUF REQUIRED IMPORTED_TARGET protobuf)
+pkg_check_modules(GRPCPP REQUIRED IMPORTED_TARGET grpc++)
+
+find_program(PROTOC_EXECUTABLE NAMES protoc REQUIRED)
+find_program(GRPC_CPP_PLUGIN_EXECUTABLE NAMES grpc_cpp_plugin REQUIRED)
 
 # --- Core KV store library (no networking) ---
 add_library(kv_store src/kv_store.cpp)
@@ -39,10 +49,10 @@ set(GRPC_HDRS ${PROTO_GEN_DIR}/kv.grpc.pb.h)
 
 add_custom_command(
   OUTPUT ${PROTO_SRCS} ${PROTO_HDRS} ${GRPC_SRCS} ${GRPC_HDRS}
-  COMMAND protobuf::protoc
+  COMMAND ${PROTOC_EXECUTABLE}
   ARGS --cpp_out=${PROTO_GEN_DIR}
        --grpc_out=${PROTO_GEN_DIR}
-       --plugin=protoc-gen-grpc=$<TARGET_FILE:gRPC::grpc_cpp_plugin>
+       --plugin=protoc-gen-grpc=${GRPC_CPP_PLUGIN_EXECUTABLE}
        -I ${CMAKE_SOURCE_DIR}/proto
        ${PROTO_FILE}
   DEPENDS ${PROTO_FILE}
@@ -50,7 +60,7 @@ add_custom_command(
 
 add_library(kv_proto ${PROTO_SRCS} ${PROTO_HDRS} ${GRPC_SRCS} ${GRPC_HDRS})
 target_include_directories(kv_proto PUBLIC ${PROTO_GEN_DIR})
-target_link_libraries(kv_proto PUBLIC protobuf::libprotobuf gRPC::grpc++)
+target_link_libraries(kv_proto PUBLIC PkgConfig::PROTOBUF PkgConfig::GRPCPP)
 
 # --- gRPC server: wraps KVStore behind the KeyValueStore service ---
 add_executable(kv_server src/kv_server.cpp)
@@ -75,3 +85,7 @@ target_link_libraries(kv_coordinator PRIVATE kv_proto kv_hash)
 # --- Standalone demo: modulo hashing vs consistent hashing key movement ---
 add_executable(consistent_hash_demo src/consistent_hash_demo.cpp)
 target_link_libraries(consistent_hash_demo PRIVATE kv_hash)
+
+# --- Benchmark suite: throughput/latency vs. concurrency ---
+add_executable(kv_benchmark src/kv_benchmark.cpp)
+target_link_libraries(kv_benchmark PRIVATE kv_proto)
